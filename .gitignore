@@ -2,6 +2,8 @@
 !.gitignore
 !README.md
 !WF_preparation.ipynb
+!Analysis.ipynb
+!WF
 !WF/Snakefile
 !WF/scripts
 !WF/scripts/*
