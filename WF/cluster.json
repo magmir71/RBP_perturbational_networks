@@ -1,0 +1,35 @@
+{
+"__default__":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "06:00:00",
+"threads":"1",
+"mem":"40G",
+"out": "/scicore/home/zavolan/GROUP/RNA_oxidation/temp_dir/slurm/{rule}.{wildcards}-%j-%N.out"
+},
+"fastqc_input_files":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"4",
+"mem":"10G"
+},
+"create_index_star_without_GTF":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"12",
+"mem":"70G"
+},
+"map_genome_star_pe":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"8",
+"mem":"50G"
+}
+}

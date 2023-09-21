@@ -1,0 +1,13 @@
+*
+!.gitignore
+!README.md
+!WF_preparation.ipynb
+!WF/Snakefile
+!WF/scripts
+!WF/scripts/*
+!WF/install
+!WF/install/*
+!WF/cluster.json
+!WF/config.yaml
+!WF/envs
+!WF/envs/*

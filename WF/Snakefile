@@ -1,0 +1,244 @@
+import os
+import pandas as pd
+import shutil
+import yaml
+from shlex import quote
+from typing import Tuple
+from snakemake.utils import validate
+
+## Preparations
+
+configfile: "config.yaml"
+localrules:  finish,download_fastq_files_from_ENCODE
+
+# Get sample table (contains duplicated control samples ! -> needed for differential analysis)
+samples = pd.read_csv(
+    config["samples_file"],
+    header=0,
+    index_col=None,
+    comment='#',
+    engine='python',
+    sep="\t")
+samples = samples.drop_duplicates('sample').reset_index(drop=True)
+samples.index = samples['sample']
+
+# get expected STAR index_chromosome info files
+def get_STAR_index_chromosome_info_files(): 
+    gr = samples[['organism']].drop_duplicates().reset_index(drop=True)
+    final_list = []
+    for index,row in gr.iterrows():
+        final_list = final_list+[os.path.join(config["output_dir"],"STAR_indices",row['organism'],'without_GTF',"STAR_index","chrNameLength.txt")]
+    return final_list
+
+rule finish:
+    input:
+        fastq_1=expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R1.fastq.gz"),
+        sample = list(samples.index.values)),
+        fastq_2=expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R1.fastq.gz"),
+        sample = list(samples.index.values)),
+        fastqc_input = expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastqc",
+            "0.input.{read_pair}"),
+        sample = list(samples.index.values),read_pair=['R1','R2']),
+        STAR_index_chromosome_info_files=get_STAR_index_chromosome_info_files(),
+        bam=expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam"),
+        sample = list(samples.index.values)),
+
+rule download_fastq_files_from_ENCODE:
+    """
+        A quality control tool for high throughput sequence data
+    """
+    output:
+        fastq_1=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R1.fastq.gz"),
+        fastq_2=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R2.fastq.gz"),
+    params:
+        path_1=lambda wildcards: samples.loc[wildcards.sample, "fq1"],
+        path_2=lambda wildcards: samples.loc[wildcards.sample, "fq2"],
+        outdir = os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq")
+    threads: 1
+    log:
+        os.path.join(config["local_log"],"download_fastq_files_from_ENCODE_{sample}.log")
+    shell:
+        """(set +o pipefail; mkdir -p {params.outdir}; \
+        wget -O {output.fastq_1} {params.path_1} && \
+        wget -O {output.fastq_2} {params.path_2}) \
+        &> {log}"""
+
+rule fastqc_input_files:
+    """
+        A quality control tool for high throughput sequence data
+    """
+    input:
+        reads=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.{read_pair}.fastq.gz"),
+    output:
+        outdir=directory(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastqc",
+            "0.input.{read_pair}")),
+    params:
+        read_length = lambda wildcards: samples.loc[wildcards.sample, "read_length"],
+    threads: 4
+    singularity:
+        "docker://staphb/fastqc:0.12.1"
+    log:
+        os.path.join(config["local_log"],"fastqc_input_files__{sample}_{read_pair}.log"),
+    shell:
+        """(set +o pipefail; mkdir -p {output.outdir}; \
+        fastqc --outdir {output.outdir} \
+        --threads {threads} --dup_length {params.read_length} \
+        {input.reads}) \
+        &> {log}"""
+
+rule create_index_star_without_GTF:
+    """
+        Create index for STAR alignments without GTF
+    """
+    input:
+        genome=lambda wildcards: samples.loc[(samples['organism']==wildcards.organism)].iloc[0]['genome_file'],
+        gtf=lambda wildcards: samples.loc[(samples['organism']==wildcards.organism)].iloc[0]['gtf_file'],
+    output:
+        chromosome_info=os.path.join(
+            config["output_dir"],
+            "STAR_indices",
+            "{organism}",
+            "without_GTF",
+            "STAR_index",
+            "chrNameLength.txt",
+        ),
+        chromosomes_names=os.path.join(
+            config["output_dir"],
+            "STAR_indices",
+            "{organism}",
+            "without_GTF",
+            "STAR_index",
+            "chrName.txt",
+        ),
+    params:
+        output_dir=lambda wildcards, output: os.path.dirname(output.chromosome_info),
+        outFileNamePrefix=os.path.join(
+            config["output_dir"],"STAR_indices", "{organism}", "without_GTF", "STAR_index/STAR_"
+        ),
+    singularity:
+        "docker://quay.io/biocontainers/star:2.7.8a--h9ee0642_1"
+    threads: 12
+    log:
+        os.path.join(config["local_log"],"create_index_star__{organism}.log"),
+    shell:
+        """(mkdir -p {params.output_dir}; \
+        STAR \
+        --runMode genomeGenerate \
+        --genomeDir {params.output_dir} \
+        --genomeFastaFiles {input.genome} \
+        --runThreadN {threads} \
+        --outFileNamePrefix {params.outFileNamePrefix}) \
+        &> {log}"""
+
+rule map_genome_star_pe:
+    """
+        Map to genome using STAR
+    """
+    input:
+        chromosome_info=lambda wildcards: os.path.join(config["output_dir"],"STAR_indices",str(samples.loc[wildcards.sample, "organism"]),"without_GTF","STAR_index","chrNameLength.txt"),
+        fastq_1=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R1.fastq.gz"),
+        fastq_2=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "fastq",
+            "{sample}.R2.fastq.gz"),
+    output:
+        bam=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam",
+        ),
+        fastq_unmapped=temp(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out.mate1",
+        )),
+        log_final_file=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Log.final.out",
+        ),
+    params:
+        outFileNamePrefix=lambda wildcards, output: output.bam.replace(
+            "Aligned.sortedByCoord.out.bam", ""
+        ),
+        STAR_index=lambda wildcards, input: os.path.dirname(input.chromosome_info),
+    singularity:
+        "docker://quay.io/biocontainers/star:2.7.8a--h9ee0642_1"
+    threads: 8
+    log:
+        os.path.join(config["local_log"],"map_genome_star_pe__{sample}.log")
+    shell:
+        """(STAR \
+        --runMode alignReads \
+        --alignEndsType Local \
+        --runThreadN {threads} \
+        --genomeDir {params.STAR_index} \
+        --readFilesIn {input.fastq_1} {input.fastq_2} \
+        --readFilesCommand zcat \
+        --outFileNamePrefix {params.outFileNamePrefix} \
+        --genomeLoad NoSharedMemory \
+        --outSAMtype BAM SortedByCoordinate \
+        --outFilterType BySJout \
+        --outReadsUnmapped Fastx \
+        --twopassMode None \
+        --outBAMsortingThreadN {threads} \
+        --outFilterMultimapNmax 500000000 \
+        --outSAMattrIHstart 0 \
+        --outSAMattributes All \
+        --limitOutSJcollapsed 5000000) \
+        &> {log}"""

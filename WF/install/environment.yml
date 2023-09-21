@@ -1,0 +1,10 @@
+name: RBP_perturbational_networks
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7.4
+  - tabulate=0.8.10
+  - snakemake=7.2.1
+  - pandas==1.0.1
