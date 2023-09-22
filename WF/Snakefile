@@ -74,9 +74,9 @@ rule finish:
             "samples",
             "{sample}",
             "map_genome",
-            "{sample}.Unmapped.out.fastq.gz",
+            "{sample}.Unmapped.out.{read_pair}.fastq.gz",
         ),
-        sample = list(samples.index.values)),
+        sample = list(samples.index.values), read_pair = ['R1','R2']),
         TIN_score=expand(os.path.join(
                 config["output_dir"], "samples", "{sample}", "TIN", "TIN_score.tsv"
             ),
@@ -218,12 +218,19 @@ rule map_genome_star_pe:
             "map_genome",
             "{sample}.Aligned.sortedByCoord.out.bam",
         ),
-        fastq_unmapped=temp(os.path.join(
+        fastq_unmapped_1=temp(os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "map_genome",
             "{sample}.Unmapped.out.mate1",
+        )),
+        fastq_unmapped_2=temp(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out.mate2",
         )),
         log_final_file=os.path.join(
             config["output_dir"],
@@ -292,31 +299,31 @@ rule samtools_index_mapped:
         """(samtools index --threads {threads} \
         {input.bam}; ) &> {log}"""
 
-rule pigz_unmapped_reads:
+rule pigz_unmapped_reads_pe:
     """
         Compress fastq with unmapped reads with pigz.
     """
     input:
-        fastq_unmapped=os.path.join(
+        fastq_unmapped=lambda wildcards: os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "map_genome",
-            "{sample}.Unmapped.out.mate1",
-        )
+            "{sample}.Unmapped.out."+("mate1" if wildcards.read_pair=="R1" else "mate2"),
+        ),
     output:
         gz_file=os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "map_genome",
-            "{sample}.Unmapped.out.fastq.gz",
+            "{sample}.Unmapped.out.{read_pair}.fastq.gz",
         ),
     threads: 6
     singularity:
         "docker://nsheff/pigz:latest"
     log:
-        os.path.join(config["local_log"],"pigz_unmapped_reads_{sample}.log")
+        os.path.join(config["local_log"],"pigz_unmapped_reads_{sample}_{read_pair}.log")
     shell:
         """pigz \
         --force \
@@ -384,16 +391,23 @@ rule calculate_TIN_scores:
                 config["output_dir"], "samples", "{sample}", "TIN", "TIN_score.tsv"
             ),
     params:
+        sample = "{sample}",
         outdir = os.path.join(config["output_dir"], "samples", "{sample}", "TIN"),
     container:
         "docker://quay.io/biocontainers/tin-score-calculation:0.6.3--pyh5e36f6f_0"
-    threads: 2
+    threads: 4
     log:
         os.path.join(config["local_log"],"calculate_TIN_scores_{sample}.log")
     shell:
         "(mkdir -p {params.outdir}; calculate-tin.py \
         -i {input.bam} \
         -r {input.transcripts_bed12} \
-        --names {sample} \
+        --names {params.sample} \
         -p {threads} \
         > {output.TIN_score}) &> {log}"
+
+##############################################################################
+### PAQR rules
+##############################################################################
+
+

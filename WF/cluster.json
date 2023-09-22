@@ -55,5 +55,13 @@
 "time": "05:59:00",
 "threads":"1",
 "mem":"40G"
+},
+"calculate_TIN_scores":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"4",
+"mem":"50G"
 }
 }
