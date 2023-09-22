@@ -8,6 +8,8 @@ from snakemake.utils import validate
 
 ## Preparations
 
+# TEST #
+
 configfile: "config.yaml"
 localrules:  finish,download_fastq_files_from_ENCODE
 
