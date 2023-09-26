@@ -31,5 +31,37 @@
 "time": "05:59:00",
 "threads":"8",
 "mem":"50G"
+},
+"samtools_index_mapped":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"8",
+"mem":"30G"
+},
+"pigz_unmapped_reads":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"6",
+"mem":"10G"
+},
+"extract_transcripts_as_bed12":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"1",
+"mem":"40G"
+},
+"calculate_TIN_scores":
+{
+"queue":"6hours",
+"partition":"scicore",
+"time": "05:59:00",
+"threads":"4",
+"mem":"50G"
 }
 }

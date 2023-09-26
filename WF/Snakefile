@@ -63,24 +63,44 @@ rule finish:
             "map_genome",
             "{sample}.Aligned.sortedByCoord.out.bam"),
         sample = list(samples.index.values)),
+        bai = expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam.bai",
+        ),
+        sample = list(samples.index.values)),
+        Unmapped_gzipped_fastq=expand(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out.{read_pair}.fastq.gz",
+        ),
+        sample = list(samples.index.values), read_pair = ['R1','R2']),
+        TIN_score=expand(os.path.join(
+                config["output_dir"], "samples", "{sample}", "TIN", "TIN_score.tsv"
+            ),
+        sample = list(samples.index.values)),
 
 rule download_fastq_files_from_ENCODE:
     """
         A quality control tool for high throughput sequence data
     """
     output:
-        fastq_1=os.path.join(
+        fastq_1=temp(os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "fastq",
-            "{sample}.R1.fastq.gz"),
-        fastq_2=os.path.join(
+            "{sample}.R1.fastq.gz")),
+        fastq_2=temp(os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "fastq",
-            "{sample}.R2.fastq.gz"),
+            "{sample}.R2.fastq.gz")),
     params:
         path_1=lambda wildcards: samples.loc[wildcards.sample, "fq1"],
         path_2=lambda wildcards: samples.loc[wildcards.sample, "fq2"],
@@ -200,12 +220,19 @@ rule map_genome_star_pe:
             "map_genome",
             "{sample}.Aligned.sortedByCoord.out.bam",
         ),
-        fastq_unmapped=temp(os.path.join(
+        fastq_unmapped_1=temp(os.path.join(
             config["output_dir"],
             "samples",
             "{sample}",
             "map_genome",
             "{sample}.Unmapped.out.mate1",
+        )),
+        fastq_unmapped_2=temp(os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out.mate2",
         )),
         log_final_file=os.path.join(
             config["output_dir"],
@@ -244,3 +271,145 @@ rule map_genome_star_pe:
         --outSAMattributes All \
         --limitOutSJcollapsed 5000000) \
         &> {log}"""
+
+rule samtools_index_mapped:
+    """
+        index bam files
+    """
+    input:
+        bam=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam",
+        ),
+    output:
+        bai = os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam.bai",
+        ),
+    singularity:
+        "docker://quay.io/biocontainers/samtools:1.9--h10a08f8_12"
+    threads: 8
+    log:
+        os.path.join(config["local_log"],"samtools_index_mapped_{sample}.log")
+    shell:
+        """(samtools index --threads {threads} \
+        {input.bam}; ) &> {log}"""
+
+rule pigz_unmapped_reads_pe:
+    """
+        Compress fastq with unmapped reads with pigz.
+    """
+    input:
+        fastq_unmapped=lambda wildcards: os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out."+("mate1" if wildcards.read_pair=="R1" else "mate2"),
+        ),
+    output:
+        gz_file=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Unmapped.out.{read_pair}.fastq.gz",
+        ),
+    threads: 6
+    singularity:
+        "docker://nsheff/pigz:latest"
+    log:
+        os.path.join(config["local_log"],"pigz_unmapped_reads_{sample}_{read_pair}.log")
+    shell:
+        """pigz \
+        --force \
+        --stdout \
+        --processes {threads} \
+        {input.fastq_unmapped} > {output.gz_file} \
+        2> {log}"""
+
+### Rules for TIN score calculation
+
+rule extract_transcripts_as_bed12:
+    """
+        Convert transcripts to BED12 format
+    """
+    input:
+        gtf=lambda wildcards: samples.loc[(samples['organism']==wildcards.organism)].iloc[0]['gtf_file'],
+    output:
+        bed12=os.path.join(
+            config["output_dir"],
+            "modified_annotations",
+            "{organism}",
+            "full_transcripts_protein_coding.bed"),
+    params:
+        outdir = os.path.join(
+            config["output_dir"],
+            "modified_annotations",
+            "{organism}"),
+    container:
+        "docker://quay.io/biocontainers/zgtf:0.1.1--pyh5e36f6f_0"
+    threads: 1
+    log:
+        os.path.join(config["local_log"],"extract_transcripts_as_bed12_{organism}.log")
+    shell:
+        "(mkdir -p {params.outdir}; gtf2bed12 \
+        --gtf {input.gtf} \
+        --bed12 {output.bed12}) \
+        &> {log}"
+
+rule calculate_TIN_scores:
+    """
+        Calculate transcript integrity (TIN) score
+    """
+    input:
+        bam=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam",
+        ),
+        bai=os.path.join(
+            config["output_dir"],
+            "samples",
+            "{sample}",
+            "map_genome",
+            "{sample}.Aligned.sortedByCoord.out.bam.bai",
+        ),
+        transcripts_bed12=lambda wildcards: os.path.join(
+            config["output_dir"],
+            "modified_annotations",
+            samples.loc[wildcards.sample, "organism"],
+            "full_transcripts_protein_coding.bed"),
+    output:
+        TIN_score=os.path.join(
+                config["output_dir"], "samples", "{sample}", "TIN", "TIN_score.tsv"
+            ),
+    params:
+        sample = "{sample}",
+        outdir = os.path.join(config["output_dir"], "samples", "{sample}", "TIN"),
+    container:
+        "docker://quay.io/biocontainers/tin-score-calculation:0.6.3--pyh5e36f6f_0"
+    threads: 4
+    log:
+        os.path.join(config["local_log"],"calculate_TIN_scores_{sample}.log")
+    shell:
+        "(mkdir -p {params.outdir}; calculate-tin.py \
+        -i {input.bam} \
+        -r {input.transcripts_bed12} \
+        --names {params.sample} \
+        -p {threads} \
+        > {output.TIN_score}) &> {log}"
+
+##############################################################################
+### PAQR rules
+##############################################################################
+
+
