@@ -1,0 +1,202 @@
+{
+"__default__":
+{
+"queue":"6hours",
+"time": "05:59:00",
+"threads":"1",
+"mem":"50G",
+"out": "/scicore/home/zavolan/GROUP/Pathway_project/cluster_temp_dir/slurm/{rule}.{wildcards}-%j-%N.out"
+},
+
+"seqtk_pe":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"seqtk_se":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"fastqc_se":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"fastqc_pe":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"star_nogtf_pe":
+{
+"queue":"6hours",
+"time": "05:59:00",
+"threads":"12",
+"mem":"70G"
+},
+
+"star_gtf_pe":
+{
+"queue":"6hours",
+"time": "05:59:00",
+"threads":"12",
+"mem":"70G"
+},
+
+"star_nogtf_se":
+{
+"queue":"6hours",
+"time": "05:59:00",
+"threads":"12",
+"mem":"70G"
+},
+
+"star_gtf_se":
+{
+"queue":"6hours",
+"time": "05:59:00",
+"threads":"12",
+"mem":"70G"
+},
+
+"samtools_index_nogtf_se":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"samtools_idxstats_nogtf_se":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"samtools_index_gtf_se":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"samtools_idxstats_gtf_se":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"samtools_index_nogtf_pe":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"samtools_idxstats_nogtf_pe":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"samtools_index_gtf_pe":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"samtools_idxstats_gtf_pe":
+{
+"queue":"6hours",
+"time": "00:30:00",
+"threads":"1",
+"mem":"30G"
+},
+
+"megadepth_nogtf_se_genes":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_gtf_se_genes":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_nogtf_se_exons":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_gtf_se_exons":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_nogtf_pe_genes":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_gtf_pe_genes":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_nogtf_pe_exons":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+},
+
+"megadepth_gtf_pe_exons":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"12",
+"mem":"30G"
+}
+}

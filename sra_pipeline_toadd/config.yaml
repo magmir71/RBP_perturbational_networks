@@ -1,0 +1,25 @@
+# PIPELINE CONFIGS #
+
+#SRA samples table
+samples: "/scicore/home/zavolan/GROUP/Pathway_project/MYC/SRA_MYC_Table_better.tsv"
+
+#directories
+main: "/scicore/home/zavolan/GROUP/Pathway_project/MYC"
+outdir: "/scicore/home/zavolan/GROUP/Pathway_project/Pipeline_SRA_outputs" #meglio aggiungere MYC/mTOR
+
+#executables
+seqtk: "seqtk"
+star: "STAR"
+fastqc: "fastqc"
+samtools: "samtools"
+megadepth: "megadepth"
+featureCounts: "featureCounts"
+
+#star indexes created with/out annotation
+starIndexGTF: "/scicore/home/zavolan/GROUP/Pathway_project/STAR/STAR_GTF"
+starIndexNOGTF: "/scicore/home/zavolan/GROUP/Pathway_project/STAR/STAR_noGTF"
+
+#gtf file used
+gtf: "/scicore/home/zavolan/GROUP/Pathway_project/STAR/gencode.v43.annotation.gtf"
+gtf.genes.bed: "/scicore/home/zavolan/GROUP/Pathway_project/STAR/gencode.v43.genes.bed"
+gtf.exons.bed: "/scicore/home/zavolan/GROUP/Pathway_project/STAR/gencode.v43.exons.bed"
