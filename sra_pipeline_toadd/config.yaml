@@ -1,13 +1,17 @@
 # PIPELINE CONFIGS #
 
 #SRA samples table
-samples: "/scicore/home/zavolan/GROUP/Pathway_project/MYC/SRA_MYC_Table_better.tsv"
+samples: "/scicore/home/zavolan/GROUP/Pathway_project/test/PRJNA905815_sra_input_table.txt"
 
 #directories
-main: "/scicore/home/zavolan/GROUP/Pathway_project/MYC"
-outdir: "/scicore/home/zavolan/GROUP/Pathway_project/Pipeline_SRA_outputs" #meglio aggiungere MYC/mTOR
+main: "/scicore/home/zavolan/GROUP/Pathway_project/test"
+outdir: "/scicore/home/zavolan/GROUP/Pathway_project/test/outdir"
+log_dir: "/scicore/home/zavolan/GROUP/Pathway_project/test/outdir/logs"
 
 #executables
+prefetch: "prefetch"
+fasterq-dump: "fasterq-dump"
+pigz: "pigz"
 seqtk: "seqtk"
 star: "STAR"
 fastqc: "fastqc"

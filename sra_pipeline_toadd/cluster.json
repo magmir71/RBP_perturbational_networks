@@ -8,6 +8,55 @@
 "out": "/scicore/home/zavolan/GROUP/Pathway_project/cluster_temp_dir/slurm/{rule}.{wildcards}-%j-%N.out"
 },
 
+
+"prefetch_se":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"10G"
+},
+
+"prefetch_pe":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"10G"
+},
+
+"fasterq_dump_pe":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"10G"
+},
+
+"fasterq_dump_se":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"1",
+"mem":"10G"
+},
+
+"compress_fastq_se":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"8",
+"mem":"32G"
+},
+
+"compress_fastq_pe":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"8",
+"mem":"32G"
+},
+
 "seqtk_pe":
 {
 "queue":"6hours",
@@ -198,5 +247,14 @@
 "time": "01:00:00",
 "threads":"12",
 "mem":"30G"
+},
+
+"DGEA":
+{
+"queue":"6hours",
+"time": "01:00:00",
+"threads":"8",
+"mem":"16G"
 }
+
 }

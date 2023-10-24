@@ -335,7 +335,7 @@ rule all:
             "{run}_auc.out"),
             run = list(PE_fastq["Run"])),
 
-        test_counts = os.path.join(config['outdir'], "DEA", "prova.flag")
+        DGEA = os.path.join(config['outdir'], "DEA", "prova.flag")
 
 ## custom functions ##
 def getFromDict(dataDict, mapList):
@@ -955,17 +955,17 @@ rule megadepth_nogtf_pe_exons:
         {params.megadepth} {input.bam} --annotation {input.bed} --threads {threads} --prefix {params.prefix} --auc --frag-dist --include-sofclip --junctions --all-junctions --bigwig --no-index > {output.auc} 2> {log})
         """
 
-
-rule test_counts:
+## TARGET GENE AND DGE ANALYSIS (on megadepth outputs) ##
+rule DGEA:
     input: 
         samples = config['samples'],
         genes_bed = config['gtf.genes.bed'],
     params:
         sample_dir = config['outdir'],
-        dea_outdir = os.path.join(config["outdir"], "DEA"),
-        script = "/scicore/home/zavolan/franch0002/myscripts/test_counts.R"
+        dea_outdir = os.path.join(config["outdir"], "DEA",),
+        script = "/scicore/home/zavolan/franch0002/myscripts/DGEA.R"
     log:
-        os.path.join(config['outdir'], "DEA", "test_counts.log"),
+        os.path.join(config['outdir'], "DEA", "DGEA.log"),
     output:
         flag = os.path.join(config['outdir'], "DEA", "prova.flag")
     conda: "/scicore/home/zavolan/franch0002/myscripts/R4pipeline.yaml",
